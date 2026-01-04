@@ -13,18 +13,37 @@ class NotesScreen extends StatefulWidget {
 class _NotesScreenState extends State<NotesScreen> {
   bool _hasGenerated = false;
   bool _isGenerating = false;
+  final TextEditingController _textController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 
   void _generateNotes() {
+    if (_textController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter some text first'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isGenerating = true;
     });
 
     // Simulate generation
     Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isGenerating = false;
-        _hasGenerated = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+          _hasGenerated = true;
+        });
+      }
     });
   }
 
@@ -93,14 +112,25 @@ class _NotesScreenState extends State<NotesScreen> {
               decoration: BoxDecoration(
                 color: AppColors.backgroundWhite,
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _textController.text.isNotEmpty
+                      ? AppColors.primaryBlue.withOpacity(0.3)
+                      : Colors.transparent,
+                  width: 2,
+                ),
               ),
               child: TextField(
+                controller: _textController,
                 maxLines: 6,
+                onChanged: (value) {
+                  setState(() {});
+                },
                 decoration: InputDecoration(
-                  hintText: 'Paste lecture notes or start typing...',
+                  hintText: 'Paste lecture notes or start typing...\n\nExample: Photosynthesis is the process by which plants convert light energy into chemical energy...',
                   border: InputBorder.none,
                   hintStyle: TextStyle(
                     color: AppColors.textTertiary,
+                    fontSize: 14,
                   ),
                 ),
               ),

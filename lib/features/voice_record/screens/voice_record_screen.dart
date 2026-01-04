@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 import '../../../core/constants/app_colors.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class VoiceRecordScreen extends StatefulWidget {
   const VoiceRecordScreen({super.key});
@@ -15,11 +16,17 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
   bool _isRecording = false;
   bool _isPaused = false;
   bool _isAnalyzing = false;
+  bool _isPlaying = false;
   int _seconds = 0;
+  int _playbackSeconds = 0;
+  int _totalRecordingSeconds = 0;
+  double _playbackSpeed = 1.0;
   Timer? _timer;
+  Timer? _playbackTimer;
   late AnimationController _waveController;
   final List<double> _waveformData = [];
   final Random _random = Random();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -38,7 +45,9 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
   @override
   void dispose() {
     _timer?.cancel();
+    _playbackTimer?.cancel();
     _waveController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -70,6 +79,76 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
     setState(() {
       _isRecording = false;
       _isPaused = false;
+      _totalRecordingSeconds = _seconds;
+    });
+  }
+
+  void _playRecording() async {
+    if (_isPlaying) {
+      _playbackTimer?.cancel();
+      setState(() {
+        _isPlaying = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isPlaying = true;
+      _playbackSeconds = 0;
+    });
+
+    // Simulate audio playback with timer
+    _playbackTimer = Timer.periodic(Duration(milliseconds: (1000 / _playbackSpeed).round()), (timer) {
+      if (_playbackSeconds >= _totalRecordingSeconds) {
+        timer.cancel();
+        setState(() {
+          _isPlaying = false;
+          _playbackSeconds = 0;
+        });
+      } else {
+        setState(() {
+          _playbackSeconds++;
+        });
+      }
+    });
+  }
+
+  void _seekTo(double value) {
+    setState(() {
+      _playbackSeconds = (value * _totalRecordingSeconds).round();
+    });
+  }
+
+  void _changePlaybackSpeed() {
+    setState(() {
+      if (_playbackSpeed == 1.0) {
+        _playbackSpeed = 1.5;
+      } else if (_playbackSpeed == 1.5) {
+        _playbackSpeed = 2.0;
+      } else if (_playbackSpeed == 2.0) {
+        _playbackSpeed = 0.5;
+      } else {
+        _playbackSpeed = 1.0;
+      }
+    });
+
+    // Restart playback with new speed if currently playing
+    if (_isPlaying) {
+      _playbackTimer?.cancel();
+      _playRecording();
+    }
+  }
+
+  void _deleteRecording() {
+    _timer?.cancel();
+    _playbackTimer?.cancel();
+    setState(() {
+      _isRecording = false;
+      _isPaused = false;
+      _isPlaying = false;
+      _seconds = 0;
+      _playbackSeconds = 0;
+      _totalRecordingSeconds = 0;
     });
   }
 
@@ -296,9 +375,10 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Subject Badge
               Container(
@@ -382,7 +462,7 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
                     _buildControlButton(
                       icon: Icons.delete_outline_rounded,
                       label: 'Delete',
-                      onPressed: _stopRecording,
+                      onPressed: _deleteRecording,
                     ),
                     const SizedBox(width: 24),
                     _buildMainButton(
@@ -392,8 +472,13 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
                     const SizedBox(width: 24),
                     _buildControlButton(
                       icon: Icons.stop_rounded,
-                      label: 'Play',
+                      label: 'Stop',
                       onPressed: _stopRecording,
+                    ),
+                  ] else if (_totalRecordingSeconds > 0) ...[
+                    _buildMainButton(
+                      icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                      onPressed: _playRecording,
                     ),
                   ] else ...[
                     _buildMainButton(
@@ -404,7 +489,13 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
                 ],
               ),
 
-              const Spacer(),
+              // Audio Player Controls (when recording exists)
+              if (!_isRecording && _totalRecordingSeconds > 0) ...[
+                const SizedBox(height: 32),
+                _buildAudioPlayer(),
+              ],
+
+              SizedBox(height: _isRecording ? 80 : 40),
 
               // Analysis Section
               if (!_isRecording && _seconds > 0) ...[
@@ -629,6 +720,265 @@ class _VoiceRecordScreenState extends State<VoiceRecordScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAudioPlayer() {
+    final progress = _totalRecordingSeconds > 0
+        ? _playbackSeconds / _totalRecordingSeconds
+        : 0.0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundWhite,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Title
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.headphones_rounded,
+                  color: AppColors.primaryBlue,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Audio Playback',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Listen to your recording',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Delete Button
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: AppColors.error,
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Recording'),
+                      content: const Text(
+                        'Are you sure you want to delete this recording?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _deleteRecording();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                          ),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Progress Bar
+          Column(
+            children: [
+              SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 4,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 8,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 16,
+                  ),
+                ),
+                child: Slider(
+                  value: progress,
+                  onChanged: (value) {
+                    _seekTo(value);
+                  },
+                  activeColor: AppColors.primaryBlue,
+                  inactiveColor: AppColors.divider,
+                ),
+              ),
+              // Time Display
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _formatTime(_playbackSeconds),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      _formatTime(_totalRecordingSeconds),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Playback Controls
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Rewind 10s
+              IconButton(
+                icon: const Icon(Icons.replay_10_rounded),
+                iconSize: 32,
+                color: AppColors.textPrimary,
+                onPressed: () {
+                  setState(() {
+                    _playbackSeconds = (_playbackSeconds - 10).clamp(0, _totalRecordingSeconds);
+                  });
+                },
+              ),
+
+              const SizedBox(width: 24),
+
+              // Play/Pause
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  ),
+                  iconSize: 40,
+                  color: Colors.white,
+                  onPressed: _playRecording,
+                ),
+              ),
+
+              const SizedBox(width: 24),
+
+              // Forward 10s
+              IconButton(
+                icon: const Icon(Icons.forward_10_rounded),
+                iconSize: 32,
+                color: AppColors.textPrimary,
+                onPressed: () {
+                  setState(() {
+                    _playbackSeconds = (_playbackSeconds + 10).clamp(0, _totalRecordingSeconds);
+                  });
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Playback Speed
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.speed_rounded,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: _changePlaybackSpeed,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Text(
+                    '${_playbackSpeed}x',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Playback Speed',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

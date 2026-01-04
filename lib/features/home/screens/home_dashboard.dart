@@ -483,61 +483,289 @@ class _ProfileTab extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text(
-              'Profile',
-              style: Theme.of(context).textTheme.headlineMedium,
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Profile',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_rounded),
+                  onPressed: () {},
+                ),
+              ],
             ),
-            const SizedBox(height: 32),
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: AppColors.primaryBlue,
-              child: Icon(
-                Icons.person_rounded,
-                size: 50,
-                color: Colors.white,
+            const SizedBox(height: 24),
+            
+            // Profile Card
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryBlue, AppColors.primaryDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryBlue.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const CircleAvatar(
+                          radius: 46,
+                          backgroundColor: AppColors.primaryBlue,
+                          child: Text(
+                            'AJ',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 3,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Alex Johnson',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'student@example.com',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.workspace_premium_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Premium Member',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Alex',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'student@example.com',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+            
+            const SizedBox(height: 24),
+            
+            // Stats Row
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    icon: Icons.local_fire_department_rounded,
+                    value: '12',
+                    label: 'Day Streak',
+                    color: AppColors.warning,
                   ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    icon: Icons.emoji_events_rounded,
+                    value: '47',
+                    label: 'Quizzes Done',
+                    color: AppColors.success,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    icon: Icons.timer_rounded,
+                    value: '23h',
+                    label: 'Study Time',
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 32),
+            
+            const SizedBox(height: 24),
+            
+            // Options
             _buildProfileOption(
               context,
               icon: Icons.settings_rounded,
               title: 'Settings',
-              onTap: () {},
+              subtitle: 'Customize your experience',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
             ),
             _buildProfileOption(
               context,
               icon: Icons.notifications_rounded,
               title: 'Notifications',
+              subtitle: 'Manage your alerts',
               onTap: () {},
+            ),
+            _buildProfileOption(
+              context,
+              icon: Icons.star_rounded,
+              title: 'Achievements',
+              subtitle: 'View your progress',
+              onTap: () {
+                _showAchievements(context);
+              },
             ),
             _buildProfileOption(
               context,
               icon: Icons.help_outline_rounded,
               title: 'Help & Support',
+              subtitle: 'Get help when you need it',
+              onTap: () {},
+            ),
+            _buildProfileOption(
+              context,
+              icon: Icons.privacy_tip_rounded,
+              title: 'Privacy Policy',
+              subtitle: 'Learn how we protect your data',
               onTap: () {},
             ),
             _buildProfileOption(
               context,
               icon: Icons.logout_rounded,
               title: 'Log Out',
+              subtitle: 'Sign out of your account',
               onTap: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                _showLogoutDialog(context);
               },
+              isDestructive: true,
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Version
+            Text(
+              'Version 2.4.0 (Build 8729)',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+    BuildContext context, {
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundWhite,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -546,19 +774,240 @@ class _ProfileTab extends StatelessWidget {
     BuildContext context, {
     required IconData icon,
     required String title,
+    required String subtitle,
     required VoidCallback onTap,
+    bool isDestructive = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.backgroundWhite,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: ListTile(
-        leading: Icon(icon, color: AppColors.textPrimary),
-        title: Text(title),
-        trailing: const Icon(Icons.chevron_right_rounded),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDestructive
+                ? AppColors.error.withOpacity(0.1)
+                : AppColors.primaryBlue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: isDestructive ? AppColors.error : AppColors.primaryBlue,
+            size: 22,
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isDestructive ? AppColors.error : AppColors.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right_rounded,
+          color: isDestructive ? AppColors.error : AppColors.textTertiary,
+        ),
         onTap: onTap,
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        title: const Text('Log Out'),
+        content: const Text(
+          'Are you sure you want to log out?',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Log Out',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAchievements(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: AppColors.backgroundLight,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Achievements',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Keep learning to unlock more!',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                children: [
+                  _buildAchievementCard(
+                    icon: Icons.local_fire_department_rounded,
+                    title: '7 Day Streak',
+                    description: 'Study for 7 days straight',
+                    color: AppColors.warning,
+                    isUnlocked: true,
+                  ),
+                  _buildAchievementCard(
+                    icon: Icons.quiz_rounded,
+                    title: 'Quiz Master',
+                    description: 'Complete 50 quizzes',
+                    color: AppColors.primaryBlue,
+                    isUnlocked: true,
+                  ),
+                  _buildAchievementCard(
+                    icon: Icons.timer_rounded,
+                    title: '25h Study Time',
+                    description: 'Study for 25 hours',
+                    color: AppColors.success,
+                    isUnlocked: false,
+                  ),
+                  _buildAchievementCard(
+                    icon: Icons.workspace_premium_rounded,
+                    title: 'Premium',
+                    description: 'Upgrade to premium',
+                    color: AppColors.accentPurple,
+                    isUnlocked: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAchievementCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required Color color,
+    required bool isUnlocked,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isUnlocked
+            ? AppColors.backgroundWhite
+            : AppColors.backgroundWhite.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isUnlocked ? color.withOpacity(0.3) : AppColors.divider,
+          width: 2,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isUnlocked
+                  ? color.withOpacity(0.1)
+                  : AppColors.textTertiary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: isUnlocked ? color : AppColors.textTertiary,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isUnlocked ? AppColors.textPrimary : AppColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (!isUnlocked) ...[
+            const SizedBox(height: 8),
+            const Icon(
+              Icons.lock_rounded,
+              size: 16,
+              color: AppColors.textTertiary,
+            ),
+          ],
+        ],
       ),
     );
   }
