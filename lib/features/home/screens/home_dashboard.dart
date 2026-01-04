@@ -8,6 +8,10 @@ import '../../notes/screens/notes_screen.dart';
 import '../../quiz/screens/quiz_screen.dart';
 import '../../flashcards/screens/flashcards_screen.dart';
 import '../../planner/screens/study_planner_screen.dart';
+import '../../voice_record/screens/voice_record_screen.dart';
+import '../../focus/screens/focus_mode_screen.dart';
+import '../../explain/screens/explain_screen.dart';
+import '../../settings/screens/settings_screen.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
@@ -142,31 +146,46 @@ class _HomeTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.local_fire_department_rounded,
-                        color: AppColors.warning,
-                        size: 20,
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.settings_rounded),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '12',
-                        style: TextStyle(
-                          color: AppColors.warning,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.local_fire_department_rounded,
+                            color: AppColors.warning,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '12',
+                            style: TextStyle(
+                              color: AppColors.warning,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -242,6 +261,48 @@ class _HomeTab extends StatelessWidget {
               children: [
                 Expanded(
                   child: QuickActionCard(
+                    icon: Icons.mic_rounded,
+                    label: 'Voice Record',
+                    gradient: LinearGradient(
+                      colors: [Colors.purple.shade600, Colors.purple.shade800],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const VoiceRecordScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: QuickActionCard(
+                    icon: Icons.self_improvement_rounded,
+                    label: 'Focus Mode',
+                    gradient: LinearGradient(
+                      colors: [Colors.indigo.shade700, Colors.indigo.shade900],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FocusModeScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 12),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: QuickActionCard(
                     icon: Icons.quiz_rounded,
                     label: 'Quiz Me',
                     gradient: LinearGradient(
@@ -297,11 +358,23 @@ class _HomeTab extends StatelessWidget {
             
             const SizedBox(height: 16),
             
-            const FocusCard(
-              subject: 'BIOLOGY',
-              title: 'Cellular Respiration',
-              description: 'Review the Krebs cycle and electron transport chain.',
-              color: AppColors.accentPurple,
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ExplainScreen(
+                      topic: 'Cellular Respiration',
+                    ),
+                  ),
+                );
+              },
+              child: const FocusCard(
+                subject: 'BIOLOGY',
+                title: 'Cellular Respiration',
+                description: 'Review the Krebs cycle and electron transport chain.',
+                color: AppColors.accentPurple,
+              ),
             ),
             
             const SizedBox(height: 12),
