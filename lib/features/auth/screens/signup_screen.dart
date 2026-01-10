@@ -1,17 +1,21 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../widgets/social_login_button.dart';
+import '../../home/screens/home_dashboard.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -21,32 +25,93 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleSignup() {
+  Future<void> _handleSignup() async {
     if (!_agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please agree to the Terms of Service and Privacy Policy'),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
     }
 
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement signup logic
+      await ref.read(authControllerProvider.notifier).signUpWithEmail(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            displayName: _nameController.text.trim(),
+          );
+
+      // Check for errors
+      final error = ref.read(authErrorProvider);
+      if (error != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      // Navigate to home on success
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeDashboard(),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    if (!_agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signup functionality coming soon')),
+        const SnackBar(
+          content: Text('Please agree to the Terms of Service and Privacy Policy'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+
+    // Check for errors
+    final error = ref.read(authErrorProvider);
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // Navigate to home on success
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const HomeDashboard(),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(authLoadingProvider);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
@@ -118,6 +183,31 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Name Field
+                      Text(
+                        'Full Name',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          hintText: 'Alex Johnson',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
                       // Email Field
                       Text(
                         'Email',
@@ -296,28 +386,38 @@ class _SignupScreenState extends State<SignupScreen> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: _handleSignup,
+                          onPressed: isLoading ? null : _handleSignup,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
+                            disabledBackgroundColor: AppColors.primaryBlue.withOpacity(0.6),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Create Account',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Create Account',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.arrow_forward, size: 20),
+                                  ],
                                 ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward, size: 20),
-                            ],
-                          ),
                         ),
                       ),
                       
@@ -348,9 +448,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       SocialLoginButton(
                         icon: Icons.g_mobiledata_rounded,
                         label: 'Sign up with Google',
-                        onPressed: () {
-                          // TODO: Implement Google signup
-                        },
+                        onPressed: isLoading ? () {} : _handleGoogleSignIn,
                         fullWidth: true,
                       ),
                       

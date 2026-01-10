@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../widgets/social_login_button.dart';
 import 'signup_screen.dart';
 import '../../home/screens/home_dashboard.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -24,9 +26,78 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      // Demo login - navigate to home dashboard
+      await ref.read(authControllerProvider.notifier).signInWithEmail(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+
+      // Check for errors
+      final error = ref.read(authErrorProvider);
+      if (error != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
+      // Navigate to home on success
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeDashboard(),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+
+    // Check for errors
+    final error = ref.read(authErrorProvider);
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // Navigate to home on success
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const HomeDashboard(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    await ref.read(authControllerProvider.notifier).signInWithApple();
+
+    // Check for errors
+    final error = ref.read(authErrorProvider);
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // Navigate to home on success
+    if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const HomeDashboard(),
@@ -43,6 +114,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = ref.watch(authLoadingProvider);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
@@ -233,28 +306,38 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: _handleLogin,
+                          onPressed: isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryBlue,
+                            disabledBackgroundColor: AppColors.primaryBlue.withOpacity(0.6),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Log in',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Log in',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.arrow_forward, size: 20),
+                                  ],
                                 ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward, size: 20),
-                            ],
-                          ),
                         ),
                       ),
                       
@@ -288,9 +371,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: SocialLoginButton(
                               icon: Icons.g_mobiledata_rounded,
                               label: 'Google',
-                              onPressed: () {
-                                // TODO: Implement Google login
-                              },
+                              onPressed: isLoading ? () {} : _handleGoogleSignIn,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -298,9 +379,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: SocialLoginButton(
                               icon: Icons.apple,
                               label: 'Apple',
-                              onPressed: () {
-                                // TODO: Implement Apple login
-                              },
+                              onPressed: isLoading ? () {} : _handleAppleSignIn,
                             ),
                           ),
                         ],

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "369115333266",
+    "project_id": "learn-better-c19b4",
+    "storage_bucket": "learn-better-c19b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369115333266:android:4c26f3fd258cccabf7dc4b",
+        "android_client_info": {
+          "package_name": "com.example.learn_better"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkM6NgtQ_9gD7nfFCV46f956za8kOD164"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

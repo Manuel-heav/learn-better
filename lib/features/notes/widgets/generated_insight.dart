@@ -73,3 +73,4 @@ class GeneratedInsight extends StatelessWidget {
   }
 }
 
+
