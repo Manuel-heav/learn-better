@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
-import 'core/utils/firebase_options.dart';
+import 'core/utils/user_sync.dart';
+import 'firebase_options.dart'; // FIXED: Using real FlutterFire generated config
 import 'features/onboarding/screens/splash_screen.dart';
 
 void main() async {
@@ -14,8 +15,12 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    debugPrint('✅ Firebase initialized successfully!');
+    
+    // Ensure user document exists in Firestore
+    await UserSync.ensureUserDocumentExists();
   } catch (e) {
-    debugPrint('Firebase initialization error: $e');
+    debugPrint('❌ Firebase initialization error: $e');
     // Continue running even if Firebase fails (for development)
   }
   

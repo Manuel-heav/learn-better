@@ -66,11 +66,32 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
         password: password,
         displayName: displayName,
       );
-      state = AsyncValue.data(user);
+      
+      if (user != null) {
+        state = AsyncValue.data(user);
+        _ref.read(authErrorProvider.notifier).state = null;
+      } else {
+        throw 'Failed to create user account';
+      }
     } catch (e) {
       final error = e.toString();
-      state = AsyncValue.error(error, StackTrace.current);
-      _ref.read(authErrorProvider.notifier).state = error;
+      // Only set error state if user is NOT authenticated
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        state = AsyncValue.error(error, StackTrace.current);
+        _ref.read(authErrorProvider.notifier).state = error;
+      } else {
+        // User is authenticated despite error - consider it success
+        print('⚠️ Minor error but user is authenticated: $error');
+        state = AsyncValue.data(UserModel(
+          uid: currentUser.uid,
+          email: currentUser.email!,
+          displayName: currentUser.displayName ?? displayName,
+          photoUrl: currentUser.photoURL,
+          createdAt: DateTime.now(),
+          lastLoginAt: DateTime.now(),
+        ));
+      }
     } finally {
       _ref.read(authLoadingProvider.notifier).state = false;
     }
@@ -90,11 +111,32 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
         email: email,
         password: password,
       );
-      state = AsyncValue.data(user);
+      
+      if (user != null) {
+        state = AsyncValue.data(user);
+        _ref.read(authErrorProvider.notifier).state = null;
+      } else {
+        throw 'Failed to sign in';
+      }
     } catch (e) {
       final error = e.toString();
-      state = AsyncValue.error(error, StackTrace.current);
-      _ref.read(authErrorProvider.notifier).state = error;
+      // Only set error state if user is NOT authenticated
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        state = AsyncValue.error(error, StackTrace.current);
+        _ref.read(authErrorProvider.notifier).state = error;
+      } else {
+        // User is authenticated despite error - consider it success
+        print('⚠️ Minor error but user is authenticated: $error');
+        state = AsyncValue.data(UserModel(
+          uid: currentUser.uid,
+          email: currentUser.email!,
+          displayName: currentUser.displayName ?? 'User',
+          photoUrl: currentUser.photoURL,
+          createdAt: DateTime.now(),
+          lastLoginAt: DateTime.now(),
+        ));
+      }
     } finally {
       _ref.read(authLoadingProvider.notifier).state = false;
     }

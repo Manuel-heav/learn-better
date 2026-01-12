@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/providers/ai_provider.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../core/services/firestore_service.dart';
 import '../widgets/upload_card.dart';
 import '../widgets/generated_insight.dart';
 
-class NotesScreen extends StatefulWidget {
+class NotesScreen extends ConsumerStatefulWidget {
   const NotesScreen({super.key});
 
   @override
-  State<NotesScreen> createState() => _NotesScreenState();
+  ConsumerState<NotesScreen> createState() => _NotesScreenState();
 }
 
-class _NotesScreenState extends State<NotesScreen> {
+class _NotesScreenState extends ConsumerState<NotesScreen> {
   bool _hasGenerated = false;
   bool _isGenerating = false;
   final TextEditingController _textController = TextEditingController();
+  
+  String _summary = '';
+  List<String> _keyConcepts = [];
+  List<String> _importantTerms = [];
 
   @override
   void dispose() {
@@ -21,7 +29,7 @@ class _NotesScreenState extends State<NotesScreen> {
     super.dispose();
   }
 
-  void _generateNotes() {
+  void _generateNotes() async {
     if (_textController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -35,16 +43,56 @@ class _NotesScreenState extends State<NotesScreen> {
     setState(() {
       _isGenerating = true;
     });
+    
+    ref.read(aiNotesLoadingProvider.notifier).state = true;
+    ref.read(aiNotesErrorProvider.notifier).state = null;
 
-    // Simulate generation
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isGenerating = false;
-          _hasGenerated = true;
-        });
+    try {
+      // Generate notes using AI
+      final aiService = ref.read(aiServiceProvider);
+      final result = await aiService.generateNoteSummary(_textController.text.trim());
+      
+      setState(() {
+        _summary = result['summary'] ?? '';
+        _keyConcepts = List<String>.from(result['keyConcepts'] ?? []);
+        _importantTerms = List<String>.from(result['importantTerms'] ?? []);
+        _hasGenerated = true;
+        _isGenerating = false;
+      });
+      
+      // Save to Firestore
+      final currentUser = ref.read(authStateProvider).value;
+      if (currentUser != null) {
+        try {
+          final firestoreService = FirestoreService();
+          await firestoreService.saveNote(
+            uid: currentUser.uid,
+            title: _textController.text.trim().substring(0, 50).trim() + '...',
+            content: _textController.text.trim(),
+            summary: _summary,
+          );
+        } catch (e) {
+          print('Failed to save note to Firestore: $e');
+          // Non-critical error, continue anyway
+        }
       }
-    });
+      
+    } catch (e) {
+      ref.read(aiNotesErrorProvider.notifier).state = e.toString();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      setState(() {
+        _isGenerating = false;
+      });
+    } finally {
+      ref.read(aiNotesLoadingProvider.notifier).state = false;
+    }
   }
 
   @override
@@ -238,26 +286,34 @@ class _NotesScreenState extends State<NotesScreen> {
               const SizedBox(height: 16),
 
               // Summary Section
-              const GeneratedInsight(
-                icon: Icons.notes_rounded,
-                title: 'Summary',
-                content:
-                    'The lecture covers the fundamental principles of **Photosynthesis**, specifically explaining how chloroplasts absorb light energy. Key processes include the **Light-Dependent Reactions** which convert light into chemical energy, and the **Calvin Cycle** which uses CO₂ to produce **Oxygen** as a byproduct and generating **ATP** and **NADPH** for the Calvin Cycle.',
-              ),
+              if (_summary.isNotEmpty)
+                GeneratedInsight(
+                  icon: Icons.notes_rounded,
+                  title: 'Summary',
+                  content: _summary,
+                ),
 
-              const SizedBox(height: 16),
+              if (_keyConcepts.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                // Key Concepts
+                GeneratedInsight(
+                  icon: Icons.lightbulb_rounded,
+                  title: 'Key Concepts',
+                  content: null,
+                  children: _keyConcepts.map((concept) => _buildBullet(concept)).toList(),
+                ),
+              ],
 
-              // Key Concepts
-              GeneratedInsight(
-                icon: Icons.lightbulb_rounded,
-                title: 'Key Concepts',
-                content: null,
-                children: [
-                  _buildBullet('**Chloroplast**: The organelle where photosynthesis occurs, containing chlorophyll.'),
-                  _buildBullet('**Light-Dependent Reactions**: Convert light energy into ATP and NADPH.'),
-                  _buildBullet('**Calvin Cycle**: Uses CO₂ and energy to create glucose.'),
-                ],
-              ),
+              if (_importantTerms.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                // Important Terms
+                GeneratedInsight(
+                  icon: Icons.auto_stories_rounded,
+                  title: 'Important Terms',
+                  content: null,
+                  children: _importantTerms.map((term) => _buildBullet(term)).toList(),
+                ),
+              ],
             ],
           ],
         ),

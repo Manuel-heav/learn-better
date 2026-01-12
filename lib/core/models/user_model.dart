@@ -116,13 +116,20 @@ class UserModel {
 
   // Get initials for avatar
   String get initials {
-    final names = displayName.split(' ');
-    if (names.length >= 2) {
+    // Handle empty or null displayName
+    if (displayName.trim().isEmpty) {
+      return email.isNotEmpty ? email[0].toUpperCase() : '?';
+    }
+    
+    final names = displayName.trim().split(' ').where((n) => n.isNotEmpty).toList();
+    
+    if (names.length >= 2 && names[0].isNotEmpty && names[1].isNotEmpty) {
       return '${names[0][0]}${names[1][0]}'.toUpperCase();
-    } else if (names.isNotEmpty) {
+    } else if (names.isNotEmpty && names[0].isNotEmpty) {
       return names[0][0].toUpperCase();
     }
-    return email[0].toUpperCase();
+    
+    return email.isNotEmpty ? email[0].toUpperCase() : '?';
   }
 
   // Get study time in hours

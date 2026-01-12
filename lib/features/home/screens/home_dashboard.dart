@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../auth/screens/login_screen.dart';
 import '../widgets/progress_card.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/focus_card.dart';
@@ -473,80 +476,93 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-class _ProfileTab extends StatelessWidget {
+class _ProfileTab extends ConsumerWidget {
   const _ProfileTab();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserAsync = ref.watch(currentUserProvider);
+    
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: currentUserAsync.when(
+        data: (user) {
+          if (user == null) {
+            return const Center(child: Text('No user data available'));
+          }
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               children: [
-                Text(
-                  'Profile',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Profile',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_rounded),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                
+                // Profile Card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primaryBlue, AppColors.primaryDark],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryBlue.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_rounded),
-                  onPressed: () {},
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            
-            // Profile Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryBlue, AppColors.primaryDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryBlue.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Stack(
+                  child: Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const CircleAvatar(
-                          radius: 46,
-                          backgroundColor: AppColors.primaryBlue,
-                          child: Text(
-                            'AJ',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
+                      Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
                               color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: CircleAvatar(
+                              radius: 46,
+                              backgroundColor: AppColors.primaryBlue,
+                              backgroundImage: user.photoUrl != null 
+                                ? NetworkImage(user.photoUrl!)
+                                : null,
+                              child: user.photoUrl == null
+                                ? Text(
+                                    user.initials,
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : null,
                             ),
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: AppColors.success,
                             shape: BoxShape.circle,
@@ -565,52 +581,53 @@ class _ProfileTab extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Alex Johnson',
-                    style: TextStyle(
+                  Text(
+                    user.displayName,
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'student@example.com',
-                    style: TextStyle(
+                  Text(
+                    user.email,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.white70,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.warning,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.workspace_premium_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Premium Member',
-                          style: TextStyle(
+                  if (user.isPremium)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.workspace_premium_rounded,
                             color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            size: 16,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 6),
+                          Text(
+                            'Premium Member',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -624,7 +641,7 @@ class _ProfileTab extends StatelessWidget {
                   child: _buildStatCard(
                     context,
                     icon: Icons.local_fire_department_rounded,
-                    value: '12',
+                    value: '${user.dayStreak}',
                     label: 'Day Streak',
                     color: AppColors.warning,
                   ),
@@ -634,7 +651,7 @@ class _ProfileTab extends StatelessWidget {
                   child: _buildStatCard(
                     context,
                     icon: Icons.emoji_events_rounded,
-                    value: '47',
+                    value: '${user.quizzesCompleted}',
                     label: 'Quizzes Done',
                     color: AppColors.success,
                   ),
@@ -644,7 +661,7 @@ class _ProfileTab extends StatelessWidget {
                   child: _buildStatCard(
                     context,
                     icon: Icons.timer_rounded,
-                    value: '23h',
+                    value: user.studyTimeFormatted,
                     label: 'Study Time',
                     color: AppColors.primaryBlue,
                   ),
@@ -705,21 +722,27 @@ class _ProfileTab extends StatelessWidget {
               title: 'Log Out',
               subtitle: 'Sign out of your account',
               onTap: () {
-                _showLogoutDialog(context);
+                _showLogoutDialog(context, ref);
               },
               isDestructive: true,
             ),
             
-            const SizedBox(height: 24),
-            
-            // Version
-            Text(
-              'Version 2.4.0 (Build 8729)',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
+                const SizedBox(height: 24),
+                
+                // Version
+                Text(
+                  'Version 2.4.0 (Build 8729)',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                ),
+              ],
             ),
-          ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Text('Error loading profile: $error'),
         ),
       ),
     );
@@ -822,10 +845,10 @@ class _ProfileTab extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
@@ -836,12 +859,25 @@ class _ProfileTab extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
+            onPressed: () async {
+              Navigator.pop(dialogContext); // Close dialog
+              
+              // Sign out
+              await ref.read(authControllerProvider.notifier).signOut();
+              
+              // Navigate to login screen
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => const LoginScreen(),
+                  ),
+                  (route) => false,
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/providers/ai_provider.dart';
 import '../widgets/chat_message.dart';
 import '../widgets/suggested_question.dart';
 
-class AIChatScreen extends StatefulWidget {
+class AIChatScreen extends ConsumerStatefulWidget {
   const AIChatScreen({super.key});
 
   @override
-  State<AIChatScreen> createState() => _AIChatScreenState();
+  ConsumerState<AIChatScreen> createState() => _AIChatScreenState();
 }
 
-class _AIChatScreenState extends State<AIChatScreen> {
+class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessageData> _messages = [
@@ -34,12 +36,14 @@ class _AIChatScreenState extends State<AIChatScreen> {
     super.dispose();
   }
 
-  void _sendMessage(String text) {
+  void _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
+    final userMessage = text.trim();
+    
     setState(() {
       _messages.add(ChatMessageData(
-        text: text,
+        text: userMessage,
         isAI: false,
         timestamp: DateTime.now(),
       ));
@@ -48,26 +52,41 @@ class _AIChatScreenState extends State<AIChatScreen> {
     _messageController.clear();
     _scrollToBottom();
 
-    // Simulate AI response
-    Future.delayed(const Duration(seconds: 1), () {
+    // Set loading state
+    ref.read(aiChatLoadingProvider.notifier).state = true;
+    ref.read(aiChatErrorProvider.notifier).state = null;
+
+    try {
+      // Get AI response
+      final aiService = ref.read(aiServiceProvider);
+      print('🤖 Sending to AI: $userMessage');
+      final response = await aiService.chat(userMessage);
+      print('✅ AI Response received: ${response.substring(0, 50)}...');
+      
       setState(() {
         _messages.add(ChatMessageData(
-          text: _getAIResponse(text),
+          text: response,
           isAI: true,
           timestamp: DateTime.now(),
         ));
       });
       _scrollToBottom();
-    });
-  }
-
-  String _getAIResponse(String userMessage) {
-    if (userMessage.toLowerCase().contains('quantum')) {
-      return 'Quantum entanglement is like a spooky connection between two particles. Imagine having two magic dice—even if one is on Earth and the other on Mars—if you roll a 6 on one, the other will instantly show a 6 too. They are linked in a way that changing one instantly affects the other, faster than the speed of light!';
-    } else if (userMessage.toLowerCase().contains('photosynthesis')) {
-      return 'Photosynthesis is how plants make food using sunlight! Think of it like a solar panel for plants. They take in CO₂ from air, water from soil, and light from the sun, then create glucose (sugar) and release oxygen. It happens in chloroplasts, specifically using chlorophyll, which gives plants their green color!';
+    } catch (e, stackTrace) {
+      print('❌ AI Chat Error: $e');
+      print('Stack trace: $stackTrace');
+      ref.read(aiChatErrorProvider.notifier).state = e.toString();
+      
+      // Show actual error to help debug
+      setState(() {
+        _messages.add(ChatMessageData(
+          text: 'Error: ${e.toString()}\n\nTip: Make sure Firestore rules are set in Firebase Console.',
+          isAI: true,
+          timestamp: DateTime.now(),
+        ));
+      });
+    } finally {
+      ref.read(aiChatLoadingProvider.notifier).state = false;
     }
-    return 'Great question! Let me break that down for you in simple terms. This concept is important because it forms the foundation of many related topics. Would you like me to explain any specific part in more detail?';
   }
 
   void _scrollToBottom() {
@@ -237,11 +256,23 @@ class _AIChatScreenState extends State<AIChatScreen> {
                       color: AppColors.primaryBlue,
                       shape: BoxShape.circle,
                     ),
-                    child: IconButton(
-                      icon: const Icon(Icons.send_rounded),
-                      color: Colors.white,
-                      onPressed: () => _sendMessage(_messageController.text),
-                    ),
+                    child: ref.watch(aiChatLoadingProvider)
+                        ? const Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.send_rounded),
+                            color: Colors.white,
+                            onPressed: () => _sendMessage(_messageController.text),
+                          ),
                   ),
                 ],
               ),

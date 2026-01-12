@@ -45,11 +45,14 @@ dependencies:
   # Audio
   audioplayers: ^5.2.1
   
-  # Firebase
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.16.0
-  cloud_firestore: ^4.14.0
-  firebase_storage: ^11.6.0
+  # HTTP for API calls (Groq AI)
+  http: ^1.2.0
+  
+  # Firebase (Updated to fix PigeonUserDetails error)
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  # firebase_storage: ^11.6.0  # Commented out - requires billing
   google_sign_in: ^6.2.1
   
   # State Management

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'dart:math';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/providers/ai_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-class VoiceRecordScreen extends StatefulWidget {
+class VoiceRecordScreen extends ConsumerStatefulWidget {
   const VoiceRecordScreen({super.key});
 
   @override
-  State<VoiceRecordScreen> createState() => _VoiceRecordScreenState();
+  ConsumerState<VoiceRecordScreen> createState() => _VoiceRecordScreenState();
 }
 
-class _VoiceRecordScreenState extends State<VoiceRecordScreen>
+class _VoiceRecordScreenState extends ConsumerState<VoiceRecordScreen>
     with SingleTickerProviderStateMixin {
   bool _isRecording = false;
   bool _isPaused = false;

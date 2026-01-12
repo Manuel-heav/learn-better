@@ -48,11 +48,9 @@ Your Learn Better app is now ready for production with full Firebase backend int
 - ✅ Achievement system
 
 ### 6. **File Storage** 📦
-- ✅ **StorageService** for file uploads
-- ✅ Audio recording uploads
-- ✅ PDF document uploads
-- ✅ Profile image uploads
-- ✅ User-isolated storage paths
+- ⏭️ **StorageService** (Removed - requires billing plan)
+- ⏭️ Voice recordings work locally without cloud backup
+- ⏭️ Can be added later when ready for production
 
 ### 7. **UI Integration** 🎨
 - ✅ Login screen with Firebase auth
@@ -75,8 +73,7 @@ lib/
 │   │   └── auth_provider.dart                 ⭐ NEW
 │   ├── services/
 │   │   ├── auth_service.dart                  ⭐ NEW
-│   │   ├── firestore_service.dart            ⭐ NEW
-│   │   └── storage_service.dart              ⭐ NEW
+│   │   └── firestore_service.dart            ⭐ NEW
 │   └── utils/
 │       └── firebase_options.dart              ⭐ NEW
 ├── features/
