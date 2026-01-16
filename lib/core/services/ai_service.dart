@@ -152,6 +152,41 @@ Separate questions with ---''';
     return _parseQuizQuestions(response);
   }
 
+  // Generate quiz from user-provided content (notes, textbook, etc.)
+  Future<List<Map<String, dynamic>>> generateQuizFromContent({
+    required String content,
+    required String difficulty,
+    int questionCount = 5,
+  }) async {
+    final systemPrompt = '''You are a quiz generator that creates questions ONLY from the provided study material.
+Read the content carefully and create questions that test understanding of the key concepts, facts, and details.
+
+Format each question EXACTLY like this:
+
+Q: [Question based on the content]
+A) [Option A]
+B) [Option B]
+C) [Option C]
+D) [Option D]
+CORRECT: [A/B/C/D]
+EXPLANATION: [Why this is correct, referencing the content]
+
+---
+
+IMPORTANT:
+- Questions MUST be based on the provided content only
+- Make $difficulty difficulty questions
+- Create exactly $questionCount questions
+- Separate questions with ---''';
+
+    final response = await _callGroq(
+      systemPrompt, 
+      'Create $questionCount $difficulty difficulty quiz questions based on this study material:\n\n$content',
+      maxTokens: 2500,
+    );
+    return _parseQuizQuestions(response);
+  }
+
   List<Map<String, dynamic>> _parseQuizQuestions(String text) {
     final questions = <Map<String, dynamic>>[];
     final blocks = text.split('---');
@@ -212,6 +247,39 @@ Separate cards with ---''';
       systemPrompt,
       'Create $cardCount flashcards about "$topic" based on:\n\n$content',
       maxTokens: 2000,
+    );
+    return _parseFlashcards(response);
+  }
+
+  // Generate flashcards from user-provided content (notes, textbook, etc.)
+  Future<List<Map<String, String>>> generateFlashcardsFromContent({
+    required String content,
+    int cardCount = 10,
+  }) async {
+    final systemPrompt = '''You are a flashcard creator that extracts key information from study material.
+Analyze the content and create flashcards for:
+- Key terms and definitions
+- Important concepts
+- Facts that should be memorized
+- Questions that test understanding
+
+Format each card EXACTLY like this:
+
+FRONT: [Question, term, or concept to test]
+BACK: [Answer, definition, or explanation]
+
+---
+
+IMPORTANT:
+- Flashcards MUST be based on the provided content only
+- Create exactly $cardCount flashcards
+- Make questions clear and answers comprehensive
+- Separate cards with ---''';
+
+    final response = await _callGroq(
+      systemPrompt,
+      'Create $cardCount study flashcards from this material:\n\n$content',
+      maxTokens: 2500,
     );
     return _parseFlashcards(response);
   }

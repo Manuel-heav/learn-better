@@ -20,3 +20,5 @@ final aiQuizErrorProvider = StateProvider<String?>((ref) => null);
 final aiFlashcardsErrorProvider = StateProvider<String?>((ref) => null);
 final aiExplainErrorProvider = StateProvider<String?>((ref) => null);
 
+
+
